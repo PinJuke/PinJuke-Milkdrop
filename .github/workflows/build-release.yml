@@ -1,0 +1,49 @@
+name: Repack for tag
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    name: Repack
+    runs-on: windows-2022 # For a list of available runner types, refer to
+                          # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout textures
+        uses: actions/checkout@v4
+        with:
+          repository: 'projectM-visualizer/presets-milkdrop-texture-pack'
+          path: 'presets-milkdrop-texture-pack'
+      - name: Checkout presets
+        uses: actions/checkout@v4
+        with:
+          repository: 'projectM-visualizer/presets-cream-of-the-crop'
+          path: 'presets-cream-of-the-crop'
+      - name: Copy assets
+        run: |
+          mkdir -p PinJuke/Milkdrop/Presets
+          mkdir -p PinJuke/Milkdrop/Textures
+          cp -r presets-cream-of-the-crop/* PinJuke/Milkdrop/Presets/
+          rm -r "PinJuke/Milkdrop/Presets/! Transition"
+          cp -r presets-milkdrop-texture-pack/textures/* PinJuke/Milkdrop/Textures/
+          echo "This is a repack of Milkdrop assets." >> PinJuke/Milkdrop/README.txt
+          echo "Presets: https://github.com/projectM-visualizer/presets-cream-of-the-crop" >> PinJuke/Milkdrop/README.txt
+          echo "Textures: https://github.com/projectM-visualizer/presets-milkdrop-texture-pack" >> PinJuke/Milkdrop/README.txt
+      - name: Create zip archive
+        # https://github.com/marketplace/actions/zip-release
+        uses: thedoctor0/zip-release@0.7.5
+        with:
+          type: zip
+          # e.g. PinJuke_Milkdrop_1.0.0-alpha.1.zip
+          filename: PinJuke_Milkdrop_${{ github.ref_name }}.zip
+          directory: .
+          path: PinJuke
+      - name: Upload release
+        # https://github.com/ncipollo/release-action
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: PinJuke_Milkdrop_${{ github.ref_name }}.zip
